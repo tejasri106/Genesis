@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-Process | Where-Object {$_.Id -eq 12132})",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:3000/api/health-navigator/chat\" -Method OPTIONS -TimeoutSec 5; \"api OK: $\\($r.StatusCode\\)\" } catch { \"api error: $\\($_.Exception.Message\\)\" })",
+      "Read(//d/githack/ai-hackathon/ai/**)",
+      "Read(//d/githack/ai-hackathon/components/**)",
+      "Read(//d/githack/hackathon2025-ai-powered-avatar/src/components/**)",
+      "Read(//d/githack/hackathon2025-ai-powered-avatar/src/**)",
+      "Read(//d/githack/hackathon2025-ai-powered-avatar/**)",
+      "Read(//d/githack/**)",
+      "Bash(npm install *)",
+      "Bash(npm list *)",
+      "Read(//e/gitai/mcp-local-rag/**)",
+      "Bash(npx tsx *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -H \"xi-api-key: Sk_25de38702c167939c4fde862b9f03286a56c518b6b2af794\" \"https://api.elevenlabs.io/v1/voices\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(taskkill /PID 30376 /F)",
+      "Bash(taskkill /PID 19648 /F)",
+      "PowerShell(Stop-Process -Id 19648 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 30376 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(netstat -ano)",
+      "PowerShell($proc = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty OwningProcess; if \\($proc\\) { Stop-Process -Id $proc -Force; Write-Host \"Killed PID $proc\" } else { Write-Host \"Nothing on 3000\" })",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000,3001,3002 -ErrorAction SilentlyContinue)"
+    ]
+  }
+}
