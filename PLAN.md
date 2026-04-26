@@ -1,8 +1,8 @@
-# Helix TNBC Digital Twin — Agent + Voice Architecture Plan
+# Genesis TNBC Digital Twin — Agent + Voice Architecture Plan
 
-**Status:** Planning  
+**Status:** Complete
 **Last updated:** 2026-04-25  
-**Scope:** Security layer (HIPAA/PII), pure agent layer, RAG via LanceDB, ElevenLabs STT/TTS, Twilio phone integration  
+**Scope:** Security layer (HIPAA/PII), pure agent layer, RAG via LanceDB, ElevenLabs STT/TTS
 **Constraint:** All existing routes and UI remain untouched until each phase is complete and verified
 
 ---
@@ -15,10 +15,9 @@
 4. [Phase 1 — RAG Agent (LanceDB + mcp-local-rag)](#4-phase-1--rag-agent)
 5. [Phase 2 — Pure Agent Layer](#5-phase-2--pure-agent-layer)
 6. [Phase 3 — ElevenLabs Voice (Browser)](#6-phase-3--elevenlabs-voice-browser)
-7. [Phase 4 — Twilio Phone Integration](#7-phase-4--twilio-phone-integration)
-8. [File Map](#8-file-map)
-9. [Environment Variables](#9-environment-variables)
-10. [Dependency List](#10-dependency-list)
+7. [File Map](#8-file-map)
+8. [Environment Variables](#9-environment-variables)
+9. [Dependency List](#10-dependency-list)
 
 ---
 
@@ -86,7 +85,7 @@ Security is a **cross-cutting, foundational concern** — not a phase. Every rou
 | User pastes SSN, DOB, address into chat | PHI exposure to external AI model | Pre-flight PII detection — block before model call |
 | User asks for insurance ID or MRN | HIPAA Direct Identifier leakage | Pattern-matched block + HIPAA warning message |
 | Agent constructs PubMed query with patient name | PHI in outbound API call | Clinical terms only in external search queries |
-| User asks non-oncology questions | Scope creep / misinformation risk | Off-topic deflection with `[HELIX-OFF-TOPIC]` marker |
+| User asks non-oncology questions | Scope creep / misinformation risk | Off-topic deflection with `[Genesis-OFF-TOPIC]` marker |
 | Bulk patient data extraction via API | Privacy breach | No bulk export endpoints; session-scoped data only |
 | API keys or secrets in chat | Credential leakage | Pattern match for API key formats → block |
 
@@ -99,8 +98,8 @@ All detection and message-building lives in a single module so it can be reused 
 ```typescript
 // src/lib/security.ts
 
-export const SECURITY_PREFIX = '[HELIX-SECURITY]';
-export const OFF_TOPIC_PREFIX = '[HELIX-OFF-TOPIC]';
+export const SECURITY_PREFIX = '[Genesis-SECURITY]';
+export const OFF_TOPIC_PREFIX = '[Genesis-OFF-TOPIC]';
 
 // PII trigger patterns — tested against last user message before any AI call
 const PII_TRIGGERS: { pattern: RegExp; label: string }[] = [
@@ -130,14 +129,14 @@ export function buildSecurityWarning(piiLabel: string): string {
 
 **This query has been blocked.** It appears to reference personally identifiable health information: **${piiLabel}**.
 
-Under Helix's HIPAA data security policy, AI agents are not authorized to process or respond to queries containing direct patient identifiers including:
+Under Genesis's HIPAA data security policy, AI agents are not authorized to process or respond to queries containing direct patient identifiers including:
 - Social Security Numbers, Tax IDs
 - Home addresses, phone numbers, personal email
 - Insurance IDs, member numbers, policy numbers
 - Dates of birth, medical record numbers (MRN)
 - Financial or credential information
 
-**Helix agents are authorized to process only:**
+**Genesis agents are authorized to process only:**
 - Oncology staging data (stage, grade, histology)
 - Biomarker values (BRCA status, PD-L1 CPS, Ki-67%, CA 15-3)
 - Treatment history (drug names, regimens)
@@ -150,7 +149,7 @@ export function buildOffTopicWarning(patientName: string): string {
   return `${OFF_TOPIC_PREFIX}
 ## Off-Topic Query
 
-Helix is a specialist TNBC oncology decision support system for **${patientName}**.
+Genesis is a specialist TNBC oncology decision support system for **${patientName}**.
 
 I can only respond to questions about:
 - Triple-negative breast cancer treatment options
@@ -329,7 +328,7 @@ Log storage: stdout → application monitoring (Azure Monitor / Datadog). **Do n
 | RAG documents | De-identified / publicly available only | `data/rag-lancedb/` |
 | Audit logs | 90 days (institutional policy) | Application monitoring |
 | ElevenLabs audio | Not stored — stream-only | Transient WebM blob in browser |
-| Twilio call audio | Not stored by Helix — Twilio handles | Twilio account (BAA required) |
+| Twilio call audio | Not stored by Genesis — Twilio handles | Twilio account (BAA required) |
 
 ---
 
@@ -346,7 +345,7 @@ Before production deployment with real PHI, the following BAAs must be in place:
 | ElevenLabs | Voice data contains PHI | Must be signed |
 | Twilio | Call transcripts contain PHI | Must be signed |
 
-**Current posture:** Helix agents are designed to avoid sending PHI to any external API. The pre-flight block ensures PHI-containing queries never reach model APIs. BAAs are still required at the institutional level before any clinical deployment.
+**Current posture:** Genesis agents are designed to avoid sending PHI to any external API. The pre-flight block ensures PHI-containing queries never reach model APIs. BAAs are still required at the institutional level before any clinical deployment.
 
 ---
 
@@ -366,7 +365,7 @@ src/app/api/
   voice/twilio/stream/route.ts ← REQUIRED (Phase 4): STT transcript → pre-flight before agent
 
 data/rag-docs/
-  hipaa-security-policy.md ← RAG-ingested: Helix HIPAA policy document for agent context
+  hipaa-security-policy.md ← RAG-ingested: Genesis HIPAA policy document for agent context
 ```
 
 ---
@@ -567,7 +566,7 @@ export async function supervisorAgent({
 }
 
 const SUPERVISOR_SYSTEM_PROMPT = `
-You are the Helix Supervisor Agent for TNBC oncology.
+You are the Genesis Supervisor Agent for TNBC oncology.
 
 Your job is to understand the user's query and route it to the right specialist agent:
 - callTwinAgent: simulation questions, "what if" intervention scenarios, biomarker projections
@@ -604,7 +603,7 @@ export async function researchAgent({ query, patient, modelId }: ResearchInput) 
 }
 
 const RESEARCH_AGENT_SYSTEM = `
-You are the Helix Research Agent — a specialist in TNBC oncology literature.
+You are the Genesis Research Agent — a specialist in TNBC oncology literature.
 
 PROCESS:
 1. Analyze the query for key terms (drug names, biomarkers, trial names)
@@ -632,7 +631,7 @@ export async function ragAgent({ query, patient, modelId }: RAGInput) {
   // Step 2: Generate response grounded in retrieved context
   return streamText({
     model: getModel(modelId),
-    system: `You are the Helix RAG Agent. Answer ONLY using the provided document context.
+    system: `You are the Genesis RAG Agent. Answer ONLY using the provided document context.
 If the context does not contain the answer, say so explicitly — do not fabricate.
 
 RETRIEVED CONTEXT:
@@ -673,7 +672,7 @@ Validates other agents' outputs against evidence. Prevents hallucinations.
 export async function reviewAgent({ claim, evidence, modelId }: ReviewInput) {
   return generateText({
     model: getModel(modelId),
-    system: `You are the Helix Review Agent — a clinical fact-checker.
+    system: `You are the Genesis Review Agent — a clinical fact-checker.
     
 Given a claim and supporting evidence, determine:
 - SUPPORTED: claim is directly backed by evidence with specific citations
@@ -864,7 +863,7 @@ export function VoiceButton({ onTranscript }: { onTranscript: (text: string) => 
 ### 5.8 Auto-TTS toggle
 
 - Gear icon in composer header: "🔊 Auto-speak responses"
-- Stored in localStorage `helix-voice-autoplay`
+- Stored in localStorage `Genesis-voice-autoplay`
 - When enabled: after every assistant message → POST `/api/voice/speak`
 - Stop button `⏹` stops current audio immediately
 
@@ -918,7 +917,7 @@ src/lib/voice/
 export async function POST(req: Request) {
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say>Welcome to Helix Digital Twin. Please describe the patient scenario or ask about TNBC treatment options.</Say>
+  <Say>Welcome to Genesis Digital Twin. Please describe the patient scenario or ask about TNBC treatment options.</Say>
   <Connect>
     <Stream url="wss://${process.env.NEXT_PUBLIC_HOST}/api/voice/twilio/stream">
       <Parameter name="patientId" value="default" />
@@ -1001,13 +1000,6 @@ export async function POST(req: Request) {
 - Shows call status (ringing → in-progress → completed)
 - New route: `/call` — real-time call monitor with transcript display
 
-### 6.7 Twilio requirements
-
-- Twilio account with a phone number
-- Public HTTPS endpoint (deploy to Vercel/Railway or use ngrok for dev)
-- Twilio webhook must reach `/api/voice/twilio/inbound`
-
----
 
 ## 8. File Map
 
@@ -1107,7 +1099,7 @@ NEXT_PUBLIC_HOST=your-deployed-domain.com   # or ngrok URL for dev
 
 ### Phase 1 (RAG)
 ```bash
-# Already in mcp-local-rag — install in helix project:
+# Already in mcp-local-rag — install in Genesis project:
 npm install @lancedb/lancedb @huggingface/transformers @langchain/textsplitters
 npm install pdf-parse mammoth                     # document parsing
 ```
