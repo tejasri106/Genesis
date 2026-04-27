@@ -30,7 +30,7 @@ Build a persistent, iterative research workflow
 By unifying these capabilities, Genesis transforms research from a linear process into a fast, exploratory system.
 
 ## Core Capabilities
-###1. Patient-Aware Simulation
+### 1. Patient-Aware Simulation
 Genesis models disease progression using patient-specific parameters such as mutation status and tumor biology, rather than relying on population averages.
 
 This allows researchers to explore how different interventions affect individual trajectories over time.
@@ -91,7 +91,7 @@ This architecture enables:
 - Integration of real-time data sources
 
 ## Technology Stack
-###Frontend
+### Frontend
 - Next.js (React framework)
 - TypeScript
 - Tailwind CSS
